@@ -33,20 +33,21 @@ the cut-off point
 #define F_CPU 16000000UL
 #include<util/delay.h>
 #include<avr/eeprom.h>
-#include "lcd.c"  
-#include "lcd.h" 
-#define THERMISTORNOMINAL 10000      
+#include<math.h>
+#include "lcd.c"
+#include "lcd.h"
+#define THERMISTORNOMINAL 10000
 // temp. for nominal resistance (almost always 25 C)
-#define TEMPERATURENOMINAL 25   
+#define TEMPERATURENOMINAL 25
 // how many samples to take and average, more takes longer
 // but is more 'smooth'
 #define NUMSAMPLES 2
 // The beta coefficient of the thermistor (usually 3000-4000)
 #define BCOEFFICIENT 3950
 // the value of the 'other' resistor
-#define SERIESRESISTOR 10000    
- 
-unit16_t samples[NUMSAMPLES];
+#define SERIESRESISTOR 10000
+
+uint16_t samples[NUMSAMPLES];
 
 
 uint16_t adc;
@@ -83,26 +84,26 @@ int ReadADC(uint8_t ch)
 }
  float getTemperature()
  {
-   
+
   uint8_t i;
   float average;
- 
+
   // take N samples in a row, with a slight delay
   for (i=0; i< NUMSAMPLES; i++) {
    samples[i] = ReadADC(1);
    delay(10);
   }
- 
+
   // average all the samples out
   average = 0;
   for (i=0; i< NUMSAMPLES; i++) {
      average += samples[i];
   }
   average /= NUMSAMPLES;
- 
+
   average = 1023 / average - 1;
   average = SERIESRESISTOR / average;
- 
+
   float steinhart;
   steinhart = average / THERMISTORNOMINAL;     // (R/Ro)
   steinhart = log(steinhart);                  // ln(R/Ro)
@@ -110,7 +111,7 @@ int ReadADC(uint8_t ch)
   steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
   steinhart = 1.0 / steinhart;                 // Invert
   steinhart -= 273.15;                         // convert to C
- 
+
    return steinhart;
  }
 
@@ -137,7 +138,7 @@ int ReadADC(uint8_t ch)
   }
 
   void updateLCD()  //update the lcd with current temperature and target temperature
-  { 
+  {
      checkLoad();
      lcd_init(LCD_DISP_OFF);
 	 lcd_init(LCD_DISP_ON);
@@ -153,7 +154,7 @@ int ReadADC(uint8_t ch)
    if(maxT<10)
    lcd_puts("0");
    lcd_puts(s);
-   
+
 	 lcd_gotoxy(0,1);
 	 lcd_puts("PRESENT TEMP:");
 	 if(temperature<10)
@@ -162,7 +163,7 @@ int ReadADC(uint8_t ch)
 	 lcd_puts(s);
   }
 
-  
+
 //blocking method ,scans key board and gives the grounded key number (ex: for pc2 it will give 32 3 for c and 2 for pin number,0 if no key pressed)
 uint8_t readKeyboard()
  {
@@ -181,13 +182,13 @@ uint8_t readKeyboard()
    {
        return 34;
    }
-  else 
+  else
   {
     return 0;
   }
 
  }
- void updateTargetOnLCD(int target,char[] s)
+ void updateTargetOnLCD(int target,char *s)
 {
    lcd_init(LCD_DISP_OFF);
    lcd_init(LCD_DISP_ON);
@@ -198,11 +199,11 @@ uint8_t readKeyboard()
    lcd_puts("0");
    lcd_puts(s);
 }
-uint8_t update(uint8_t target,char[] s,unit16_t location)
+uint8_t update(uint8_t target,char *s,uint16_t location)
 {
   uint8_t hDigit=target/10,lDigit=target%10;
   while(1){
-      sei();      
+      sei();
      cmd=readKeyboard();
        cli();
      if(cmd==32)
@@ -215,15 +216,15 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
        target=hDigit*10+lDigit;
      }
      else if(cmd==33)
-     {  
+     {
      lcd_clrscr();
-     lcd_puts("saving the data..");  
+     lcd_puts("saving the data..");
      _delay_ms(100);
        target=hDigit*10+lDigit;
         while (!eeprom_is_ready());
-                      eeprom_write_byte((uint16_t *)(location),(uint8_t)(cutoffTemp));//save temperaure data to the EEPROM
-           sei();           
-        return target;  
+                      eeprom_write_byte((uint16_t *)(location),(uint8_t)(target));//save temperaure data to the EEPROM
+           sei();
+        return target;
       }
     else if(cmd==34)
      {
@@ -248,7 +249,7 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
     lcd_puts("....BOOTING....");
                //setup ports
      initADC(); //init ADC
-	            
+
 	//init timer for 1 sec interrupt for periodic update of the temperature on the LCD
       TCCR1B=(1<<WGM12)|(1<<CS12);
                       OCR1A=62500;
@@ -257,7 +258,7 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
          minT=eeprom_read_byte((const uint16_t *)(2));  //read the saved power from EEROM
        if(minT>100)
 	   {
-	     cutoffTemp=99;
+	     minT=99;
 	   }
 
          while (!eeprom_is_ready());
@@ -266,13 +267,13 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
          {
             maxT=99;
          }
-     
+
 	 _delay_ms(1000);
 	 updateLCD();
 	 sei();
    uint8_t toggle=0;
    while(1)
-   { 
+   {
        cmd=readKeyboard();
         if(cmd==33)
         {
@@ -285,7 +286,7 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
              maxT=update(maxT,"maxT:",3);
            }
         }
-       
+
    }
  }
 
