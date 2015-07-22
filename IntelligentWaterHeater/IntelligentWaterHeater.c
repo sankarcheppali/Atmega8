@@ -46,7 +46,7 @@ the cut-off point
 // the value of the 'other' resistor
 #define SERIESRESISTOR 10000    
  
-unit16_t samples[NUMSAMPLES];
+uint16_t samples[NUMSAMPLES];
 
 
 uint16_t adc;
@@ -198,7 +198,7 @@ uint8_t readKeyboard()
    lcd_puts("0");
    lcd_puts(s);
 }
-uint8_t update(uint8_t target,char[] s,unit16_t location)
+uint8_t update(uint8_t target,char *s,uint16_t location)
 {
   uint8_t hDigit=target/10,lDigit=target%10;
   while(1){
@@ -221,7 +221,7 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
      _delay_ms(100);
        target=hDigit*10+lDigit;
         while (!eeprom_is_ready());
-                      eeprom_write_byte((uint16_t *)(location),(uint8_t)(cutoffTemp));//save temperaure data to the EEPROM
+                      eeprom_write_byte((uint16_t *)(location),(uint8_t)(target));//save temperaure data to the EEPROM
            sei();           
         return target;  
       }
@@ -257,7 +257,7 @@ uint8_t update(uint8_t target,char[] s,unit16_t location)
          minT=eeprom_read_byte((const uint16_t *)(2));  //read the saved power from EEROM
        if(minT>100)
 	   {
-	     cutoffTemp=99;
+	     minT=99;
 	   }
 
          while (!eeprom_is_ready());
