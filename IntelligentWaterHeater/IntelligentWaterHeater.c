@@ -45,8 +45,13 @@ the cut-off point
 // The beta coefficient of the thermistor (usually 3000-4000)
 #define BCOEFFICIENT 3950
 // the value of the 'other' resistor
+<<<<<<< HEAD
 #define SERIESRESISTOR 10000
 
+=======
+#define SERIESRESISTOR 10000    
+ 
+>>>>>>> origin/master
 uint16_t samples[NUMSAMPLES];
 
 
@@ -223,8 +228,13 @@ uint8_t update(uint8_t target,char *s,uint16_t location)
        target=hDigit*10+lDigit;
         while (!eeprom_is_ready());
                       eeprom_write_byte((uint16_t *)(location),(uint8_t)(target));//save temperaure data to the EEPROM
+<<<<<<< HEAD
            sei();
         return target;
+=======
+           sei();           
+        return target;  
+>>>>>>> origin/master
       }
     else if(cmd==34)
      {
