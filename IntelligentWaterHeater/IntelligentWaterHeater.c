@@ -13,8 +13,8 @@ PD2:E
 PD4-PD7:D4-D7(LCD)
 
 Keyboard Connections:
-PC0-save
-PC2-10's place increment
+PC0-10's place increment
+PC2-Save
 PC3-1's place increment
 
 Temperature sensor connection: we are using the thermistor
@@ -24,7 +24,6 @@ load connections:
 
 PB1-load (active high, switches on when the teperature is higher than the given temperature)
 PB2-load(active low,switches off when the teperature is higher than the given temperature)
-PB3- Buzzer, will be active for 5 sec when tempearature corsses
 the cut-off point
 */
 #include<avr/io.h>
@@ -50,7 +49,6 @@ the cut-off point
 uint16_t samples[NUMSAMPLES];
 uint16_t adc;
 uint8_t temperature=0,minT=0,cmd,maxT;//minT location 2,maxT location 3
-char s[5];
 
 void initADC()
 {
@@ -119,24 +117,25 @@ void checkLoad()  //to set the loads acordin to the temperature
   {
     PORTB|=(1<<PB1);
     PORTB&=~(1<<PB2);
-    PORTB|=(1<<PB3);
-    _delay_ms(5000);
-    PORTB&=~(1<<PB3);
+    //PORTB|=(1<<PB3);
+    //_delay_ms(5000);
+    //PORTB&=~(1<<PB3);
   }
   else if(temperature<minT)
   {
 
     PORTB|=(1<<PB2);
     PORTB&=~(1<<PB1);
-    PORTB|=(1<<PB3);
-    _delay_ms(5000);
-    PORTB&=~(1<<PB3);
+    //PORTB|=(1<<PB3);
+    //_delay_ms(5000);
+    //PORTB&=~(1<<PB3);
 
   }
 }
 
 void updateLCD()  //update the lcd with current temperature and target temperature
 {
+  char s[5];
   checkLoad();
   lcd_init(LCD_DISP_OFF);
   lcd_init(LCD_DISP_ON);
@@ -186,25 +185,25 @@ uint8_t readKeyboard()
   }
 
 }
-void updateTargetOnLCD(int target,char *s)
+void updateTargetOnLCD(int target,char *str)
 {
+  char s[5];
   lcd_init(LCD_DISP_OFF);
   lcd_init(LCD_DISP_ON);
   lcd_clrscr();
-  lcd_puts(s);
+  lcd_puts(str);
   itoa(target,s,10);
   if(target<10)
   lcd_puts("0");
   lcd_puts(s);
 }
-uint8_t update(uint8_t target,char *s,uint16_t location)
+uint8_t update(uint8_t target,char *str,uint16_t location)
 {
+  cli();
   uint8_t hDigit=target/10,lDigit=target%10;
   while(1){
-    updateTargetOnLCD(target,s);
-    sei();
+    updateTargetOnLCD(target,str);
     cmd=readKeyboard();
-    cli();
     if(cmd==32)
     {
       hDigit++;
@@ -218,7 +217,7 @@ uint8_t update(uint8_t target,char *s,uint16_t location)
     {
       lcd_clrscr();
       lcd_puts("saving the data..");
-      _delay_ms(100);
+      _delay_ms(1000);
       target=hDigit*10+lDigit;
       while (!eeprom_is_ready());
       eeprom_write_byte((uint16_t *)(location),(uint8_t)(target));//save temperaure data to the EEPROM
@@ -241,7 +240,7 @@ uint8_t getFromROM(uint8_t addr,uint8_t max)
   value=eeprom_read_byte((const uint8_t *)(addr));  //read the saved power from EEROM
   if(value>max)
   {
-    value=99;
+    value=max;
   }
   return value;
 }
